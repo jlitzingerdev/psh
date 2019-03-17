@@ -26,6 +26,6 @@ setup(
     keywords="dependency setuptools development",
     packages=find_packages(where="src"),
     install_requires=["click"],
-    extras_require={"dev": ["pylint", "pytest", "coverage"]},
+    extras_require={"dev": ["pylint", "pytest", "coverage", "black"]},
     entry_points={"console_scripts": ["psh=psh:cli"]},
 )
