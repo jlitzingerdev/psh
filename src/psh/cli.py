@@ -114,7 +114,6 @@ def append_entry(atom, entry):
         target.replace(new)
         new.append_child(pytree.Leaf(token.COMMA, ","))
         new.append_child(pytree.Leaf(token.STRING, entry))
-        print("post modify: {}".format(dump_node(atom)))
     else:
         listmaker = atom.children[1]
         listmaker.append_child(pytree.Leaf(token.COMMA, ","))
