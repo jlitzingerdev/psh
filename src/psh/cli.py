@@ -120,6 +120,12 @@ def append_entry(atom, entry):
         listmaker.append_child(pytree.Leaf(token.STRING, entry))
 
 
+def write_output(tree, original, overwrite=False):
+    if not overwrite:
+        with open("wtf.py", "w") as of:
+            of.write(str(tree))
+
+
 @click.group()
 def cli():
     """Top level entrypoint"""
@@ -128,28 +134,22 @@ def cli():
 @cli.command()
 @click.argument("filename", type=click.Path(exists=True))
 @click.argument("dependency", type=str)
-def install_requires(filename, dependency):
+def add_install_requires(filename, dependency):
     """dAd a dependency to install_requires"""
     setupfile = load_file(filename)
     d = driver.Driver(python_grammar, pytree.convert)
     try:
         tree = d.parse_string(setupfile, debug=True)
-        # dump_tree(tree)
+    except ParseError as pe:
+        print(pe.context)
+    else:
         n = find_setup_call(tree)
-        print(dump_node(n))
-
         try:
             install_requires_node = find_install_requires(n.children[1])
         except NodeNotFoundError:
             print("No existing install requires")
         else:
-            print(dump_node(install_requires_node))
             for child in install_requires_node.children:
                 if child.type == python_symbols.atom:
                     append_entry(child, dependency)
-
-        with open("wtf.py", "w") as of:
-            of.write(str(tree))
-
-    except ParseError as pe:
-        print(pe.context)
+            write_output(tree, filename)
