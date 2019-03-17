@@ -135,7 +135,7 @@ def cli():
 @click.argument("filename", type=click.Path(exists=True))
 @click.argument("dependency", type=str)
 def add_install_requires(filename, dependency):
-    """dAd a dependency to install_requires"""
+    """add a dependency to install_requires"""
     setupfile = load_file(filename)
     d = driver.Driver(python_grammar, pytree.convert)
     try:
