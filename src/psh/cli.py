@@ -17,12 +17,10 @@ from lib2to3.pgen2.parse import ParseError
 
 import click
 
+from psh import _common, _searching
+
 
 ARGUMENT_LIST = (python_symbols.argument, python_symbols.arglist)
-
-
-class NodeNotFoundError(Exception):
-    """Unable to locate a matching parset tree node"""
 
 
 def load_file(filename):
@@ -51,59 +49,31 @@ def dump_tree(tree):
         print(dump_node(n))
 
 
-def is_call(n, function_name):
-    """Look for a matching function call"""
-    if n.type != python_symbols.power:
-        return False
-    if n.children[1].type != python_symbols.trailer:
-        return False
-    if n.children[0].type != token.NAME:
-        return False
-    if n.children[0].value != function_name:
-        return False
-    return True
-
-
 def find_setup_call(tree):
     """Locate the setup function arglist node"""
     for n in tree.pre_order():
-        if is_call(n, "setup"):
+        if _searching.is_call(n, "setup"):
             return n
-    raise NodeNotFoundError("unable to locate setup")
+    raise _common.NodeNotFoundError("unable to locate setup")
 
 
 ARG_INSTALL_REQUIRES = "install_requires"
 
 
-def find_argument_in_arglist(args, target):
-    """Locate an argument in an argument list or a single argument."""
-    for child in args.children:
-        # args is really a python_symbols.argument
-        if child.type == token.NAME and child.value == target:
-            return child
-        if child.type != python_symbols.argument:
-            continue
-        if child.children[0].value == target:
-            return child
-    raise NodeNotFoundError("No argument {} in arglist".format(target))
-
-
 def find_install_requires(trailer):
     """Locate the install requires argument"""
     if len(trailer.children) == 1:
-        raise NodeNotFoundError("no install_requires argument")
+        raise _common.NodeNotFoundError("no install_requires argument")
 
     args = trailer.children[1]
-    return find_argument_in_arglist(args, ARG_INSTALL_REQUIRES)
+    return _searching.find_argument_in_arglist(args, ARG_INSTALL_REQUIRES)
 
 
 def append_entry(atom, entry):
     """Append an entry to a list"""
     entry = '"{}"'.format(entry)
     if len(atom.children) <= 2:
-        atom.insert_child(
-            len(atom.children) - 1, pytree.Leaf(token.NAME, '"{}"'.format(entry))
-        )
+        atom.insert_child(len(atom.children) - 1, pytree.Leaf(token.NAME, entry))
     elif atom.children[1].type == token.STRING:
         # Replace node with listmaker
         target = atom.children[1]
@@ -120,10 +90,52 @@ def append_entry(atom, entry):
         listmaker.append_child(pytree.Leaf(token.STRING, entry))
 
 
-def write_output(tree, original, overwrite=False):
+def append_to_install_requires(install_requires_node, dependency):
+    """Add an entry to the install requires node"""
+    for child in install_requires_node.children:
+        if child.type == python_symbols.atom:
+            append_entry(child, dependency)
+
+
+def write_output(tree, original, overwrite=False) -> None:
+    """Write the modified output"""
     if not overwrite:
         with open("wtf.py", "w") as of:
             of.write(str(tree))
+
+
+def add_arg_install_requires(trailer):
+    """Create an install requires argument where none exists"""
+    install_requires = pytree.Node(
+        python_symbols.argument,
+        [
+            pytree.Leaf(1, ARG_INSTALL_REQUIRES),
+            pytree.Leaf(22, "="),
+            pytree.Node(
+                python_symbols.atom, [pytree.Leaf(9, "["), pytree.Leaf(10, "]")]
+            ),
+        ],
+    )
+
+    try:
+        target = _searching.find_first_of_type(
+            trailer, (python_symbols.argument, python_symbols.arglist)
+        )
+    except _searching.TypeNotFoundError:
+        trailer.insert_child(1, install_requires)
+    else:
+        target = trailer.children[1]
+        if target.type == python_symbols.argument:
+            new = pytree.Node(python_symbols.arglist, [])
+            old = target.clone()
+            new.append_child(old)
+            target.replace(new)
+            target = new
+
+        target.append_child(pytree.Leaf(token.COMMA, ","))
+        target.append_child(install_requires)
+
+    return install_requires
 
 
 @click.group()
@@ -143,13 +155,15 @@ def add_install_requires(filename, dependency):
     except ParseError as pe:
         print(pe.context)
     else:
-        n = find_setup_call(tree)
+        setup_call = find_setup_call(tree)
+        print(dump_node(setup_call))
         try:
-            install_requires_node = find_install_requires(n.children[1])
-        except NodeNotFoundError:
-            print("No existing install requires")
-        else:
-            for child in install_requires_node.children:
-                if child.type == python_symbols.atom:
-                    append_entry(child, dependency)
-            write_output(tree, filename)
+            install_requires_node = find_install_requires(setup_call.children[1])
+        except _common.NodeNotFoundError:
+            trailer = _searching.find_first_of_type(
+                setup_call, (python_symbols.trailer,)
+            )
+            install_requires_node = add_arg_install_requires(trailer)
+
+        append_to_install_requires(install_requires_node, dependency)
+        write_output(tree, filename)
