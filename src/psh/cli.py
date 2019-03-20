@@ -62,37 +62,42 @@ ARG_INSTALL_REQUIRES = "install_requires"
 
 def find_install_requires(trailer):
     """Locate the install requires argument"""
-    if len(trailer.children) == 1:
-        raise _common.NodeNotFoundError("no install_requires argument")
+    for candidate in _searching.iterate_kinds(trailer, ARGUMENT_LIST):
+        try:
+            return _searching.find_argument_in_arglist(candidate, ARG_INSTALL_REQUIRES)
+        except _common.NodeNotFoundError:
+            continue
 
-    args = trailer.children[1]
-    return _searching.find_argument_in_arglist(args, ARG_INSTALL_REQUIRES)
+    raise _common.NodeNotFoundError("no install_requires argument")
 
 
 def append_entry_to_atom(atom, entry):
     """Append an entry to a list"""
-    entry = '"{}"'.format(entry)
-    if len(atom.children) <= 2:
-        atom.insert_child(len(atom.children) - 1, pytree.Leaf(token.NAME, entry))
-    elif atom.children[1].type == token.STRING:
-        # Replace node with listmaker
-        target = atom.children[1]
-        context = (target.prefix, (target.lineno, target.column))
-        new = pytree.Node(
-            python_symbols.listmaker, [pytree.Leaf(token.NAME, target.value, context)]
+    try:
+        target = _searching.find_first_of_type(
+            atom, (token.STRING, python_symbols.listmaker)
         )
-        target.replace(new)
-        new.append_child(pytree.Leaf(token.COMMA, ","))
-        new.append_child(pytree.Leaf(token.STRING, entry))
+    except _searching.TypeNotFoundError:
+        atom.insert_child(-1, pytree.Leaf(token.NAME, entry))
     else:
-        listmaker = atom.children[1]
-        listmaker.append_child(pytree.Leaf(token.COMMA, ","))
-        listmaker.append_child(pytree.Leaf(token.STRING, entry))
+        if target.type == token.STRING:
+            context = (target.prefix, (target.lineno, target.column))
+            new = pytree.Node(
+                python_symbols.listmaker,
+                [pytree.Leaf(token.NAME, target.value, context)],
+            )
+            target.replace(new)
+            target = new
+
+        if not _searching.trailing_comma(target):
+            target.append_child(pytree.Leaf(token.COMMA, ","))
+        target.append_child(pytree.Leaf(token.STRING, entry))
 
 
 def append_to_install_requires(install_requires_node, dependency):
     """Add an entry to the install requires node"""
     for child in install_requires_node.children:
+        print(dump_node(child))
         if child.type == python_symbols.atom:
             append_entry_to_atom(child, dependency)
 
@@ -150,6 +155,7 @@ def add_install_requires(filename, dependency):
     """add a dependency to install_requires"""
     setupfile = load_file(filename)
     d = driver.Driver(python_grammar, pytree.convert)
+    dependency = '"{}"'.format(dependency)
     try:
         tree = d.parse_string(setupfile, debug=True)
     except ParseError as pe:
@@ -157,13 +163,13 @@ def add_install_requires(filename, dependency):
     else:
         setup_call = find_setup_call(tree)
         print(dump_node(setup_call))
+        trailer = _searching.find_first_of_type(setup_call, (python_symbols.trailer,))
         try:
-            install_requires_node = find_install_requires(setup_call.children[1])
+            install_requires_node = find_install_requires(trailer)
         except _common.NodeNotFoundError:
-            trailer = _searching.find_first_of_type(
-                setup_call, (python_symbols.trailer,)
-            )
             install_requires_node = add_arg_install_requires(trailer)
 
+        print("pre {}".format(dump_node(install_requires_node)))
+        print("on {}".format(dump_node(trailer)))
         append_to_install_requires(install_requires_node, dependency)
         write_output(tree, filename)
