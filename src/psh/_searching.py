@@ -13,7 +13,7 @@ from lib2to3.pygram import (
     python_grammar_no_print_statement,
     python_symbols,
 )
-from lib2to3.pgen2 import driver, token
+from lib2to3.pgen2 import token
 
 
 from psh import _common
