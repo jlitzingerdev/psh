@@ -41,7 +41,7 @@ def find_argument_in_arglist(args, target):
     for child in args.children:
         # args is really a python_symbols.argument
         if child.type == token.NAME and child.value == target:
-            return child
+            return args
         if child.type != python_symbols.argument:
             continue
         if child.children[0].value == target:
