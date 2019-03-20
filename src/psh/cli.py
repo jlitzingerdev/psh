@@ -69,7 +69,7 @@ def find_install_requires(trailer):
     return _searching.find_argument_in_arglist(args, ARG_INSTALL_REQUIRES)
 
 
-def append_entry(atom, entry):
+def append_entry_to_atom(atom, entry):
     """Append an entry to a list"""
     entry = '"{}"'.format(entry)
     if len(atom.children) <= 2:
@@ -94,7 +94,7 @@ def append_to_install_requires(install_requires_node, dependency):
     """Add an entry to the install requires node"""
     for child in install_requires_node.children:
         if child.type == python_symbols.atom:
-            append_entry(child, dependency)
+            append_entry_to_atom(child, dependency)
 
 
 def write_output(tree, original, overwrite=False) -> None:
