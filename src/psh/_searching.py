@@ -55,3 +55,15 @@ def find_first_of_type(parent, kinds) -> typing.Union[Leaf, Node]:
         if ch.type in kinds:
             return ch
     raise TypeNotFoundError("No matches for {}".format(kinds))
+
+
+def iterate_kinds(parent, kinds):
+    """Generator for a specific type of children"""
+    return (ch for ch in parent.children if ch.type in kinds)
+
+
+def trailing_comma(node):
+    """Determine if there is a trailing comma"""
+    if node.children:
+        return node.children[-1].type == token.COMMA
+    return False
