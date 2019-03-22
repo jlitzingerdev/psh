@@ -2,7 +2,7 @@
 Copyright 2019 Jason Litzinger
 """
 # pylint: disable=no-member
-import os
+import sys
 
 
 from lib2to3.pygram import (
@@ -12,22 +12,42 @@ from lib2to3.pygram import (
 )
 from lib2to3.pgen2.parse import ParseError
 
-
+import attr
 import click
 
 from psh import _common, _mutators
 
 
-def write_output(tree, original, overwrite=False) -> None:
+@attr.s
+class Config:
+    """Configuration for psh"""
+
+    write = attr.ib(default=True, type=bool)
+
+
+config = Config()
+
+
+def write_output(tree, original, encoding) -> None:
     """Write the modified output"""
-    if not overwrite:
-        with open("wtf.py", "w") as of:
-            of.write(str(tree))
+    if not config.write:
+        sys.stdout.write(str(tree))
+    else:
+        with open(original, "wb") as f:
+            f.write(str(tree).encode(encoding))
 
 
 @click.group()
-def cli():
+@click.option(
+    "--no-write",
+    "-n",
+    default=True,
+    is_flag=True,
+    help="Overwrite existing setup or print to stdout",
+)
+def cli(no_write):
     """Top level entrypoint"""
+    config.write = not no_write
 
 
 @cli.command()
@@ -42,4 +62,4 @@ def add_install(filename, dependency):
         print(pe.context)
     else:
         _mutators.add_arg_to_install(tree, dependency)
-        write_output(tree, filename)
+        write_output(tree, filename, encoding)
