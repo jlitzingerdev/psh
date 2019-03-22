@@ -118,7 +118,7 @@ def find_setup_args(tree):
 def find_install_requires(tree):
     """Locate the install requires argument"""
     for n in iterate_kinds_all(tree, (python_symbols.trailer,)):
-        name_candidate = n.parent.children[0]
+        name_candidate = n.prev_sibling
         if name_candidate.type == token.NAME and name_candidate.value == "setup":
             try:
                 for candidate in iterate_kinds_children(n, ARGUMENT_LIST):
