@@ -41,7 +41,7 @@ def write_output(tree, original, encoding) -> None:
 @click.option(
     "--no-write",
     "-n",
-    default=True,
+    default=False,
     is_flag=True,
     help="Overwrite existing setup or print to stdout",
 )
@@ -79,6 +79,6 @@ def add_install(filename, dependency):
         try:
             _mutators.add_arg_to_install(tree, dependency)
         except _mutators.AlreadyExistsError as e:
-            print(str(e))
+            print("{}, not modifying".format(str(e)))
         else:
             write_output(tree, filename, encoding)
