@@ -54,12 +54,31 @@ def cli(no_write):
 @click.argument("filename", type=click.Path(exists=True))
 @click.argument("dependency", type=str)
 def add_install(filename, dependency):
-    """add a dependency to install_requires"""
+    """Add a dependency to install_requires.  This will add an entry to the
+    install_requires list.  It will not abide by any formatting standards, it
+    simply adds a new item at the end.
+
+    Usage: psh add-install setup.py mynewdependency
+
+    If a specific version is required, use the same syntax as with pip, e.g.
+
+    psh add-install setup.py foo>=0.4.5
+
+    If the dependency exists in any form, no update is made.
+
+    :param filename: The filename to update, if -n not specified.
+
+    :param dependency: The dependency to add.
+    """
     setupfile, encoding = _common.load_file(filename)
     try:
         tree = _common.parse_string(setupfile, python_grammar)
     except ParseError as pe:
         print(pe.context)
     else:
-        _mutators.add_arg_to_install(tree, dependency)
-        write_output(tree, filename, encoding)
+        try:
+            _mutators.add_arg_to_install(tree, dependency)
+        except _mutators.AlreadyExistsError as e:
+            print(str(e))
+        else:
+            write_output(tree, filename, encoding)

@@ -16,6 +16,10 @@ from lib2to3.pgen2 import token
 from psh import _common, _searching
 
 
+class AlreadyExistsError(Exception):
+    """The desired node or leaf already exists"""
+
+
 def append_entry_to_atom(atom, entry):
     """Append an entry to a list"""
     try:
@@ -93,8 +97,16 @@ def add_arg_to_install(tree, dependency: str):
         setup_args = _searching.find_setup_args(tree)
         install_requires_node = add_arg_install_requires(setup_args)
     else:
-        # Verify it doesn't exist, or if it does remove it
-        pass
+
+        for ch in _searching.iterate_kinds_all(install_requires_node, (token.STRING,)):
+            m = _common.UNQUOTED_STRING.search(ch.value)
+            if not m:
+                continue
+            existing = m.groups()[0].strip()
+            if existing == dependency:
+                raise AlreadyExistsError(
+                    "{} already exists as {}".format(dependency, existing)
+                )
 
     dependency = '"{}"'.format(dependency)
     append_to_install_requires(install_requires_node, dependency)
