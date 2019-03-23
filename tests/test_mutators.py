@@ -85,5 +85,5 @@ def test_add_install_exists():
     """Arguments can be added to an existing list of > 1"""
     tree = _common.parse_string(IR_PRE, python_grammar)
     with pytest.raises(_mutators.AlreadyExistsError):
-        _mutators.add_arg_to_install(tree, "buzz")
+        _mutators.add_arg_to_install(tree, "buzz==0.3.4")
     assert IR_PRE == str(tree)

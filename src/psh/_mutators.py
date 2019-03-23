@@ -102,8 +102,19 @@ def add_arg_to_install(tree, dependency: str):
             m = _common.UNQUOTED_STRING.search(ch.value)
             if not m:
                 continue
+
             existing = m.groups()[0].strip()
-            if existing == dependency:
+            m = _common.DEPENDENCY_NAME.search(existing)
+            if not m:
+                continue
+            ename = m.groups()[0].strip()
+
+            m = _common.DEPENDENCY_NAME.search(dependency)
+            if not m:
+                continue
+            dname = m.groups()[0].strip()
+
+            if ename == dname:
                 raise AlreadyExistsError(
                     "{} already exists as {}".format(dependency, existing)
                 )
