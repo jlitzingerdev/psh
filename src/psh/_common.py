@@ -9,7 +9,11 @@ from lib2to3.pgen2 import driver, token
 import re
 
 
-UNQUOTED_STRING = re.compile("[\"|'](.*)[\"|']")
+# Obtain foo from '"foo"' or "'foo'"
+UNQUOTED_STRING = re.compile(r"[\"|'](.*)[\"|']")
+
+# Obtain foo from 'foo==<whatev>'
+DEPENDENCY_NAME = re.compile(r"(\w*)\s*[=|>|<]{0,2}\s*\S*")
 
 
 class NodeNotFoundError(Exception):
