@@ -7,7 +7,7 @@ It does not try to solve every use case (e.g. lists that are loaded from other m
 It is not a formatter, though a future version will optionally run a specified formatter, if installed in the environment, after modifying the setup file.
 
 # Status
-This is very alpha, and does not overwrite setup yet.
+This is very alpha, but currently works well for adding to install_requires.
 
 # Credits
 I benefited greatly from examples of using lib2to3 to get an FST, but specifically I spent time in the source code of [black](https://github.com/ambv/black).
