@@ -6,6 +6,10 @@ import tokenize
 import typing
 from lib2to3 import pytree
 from lib2to3.pgen2 import driver, token
+import re
+
+
+UNQUOTED_STRING = re.compile("[\"|'](.*)[\"|']")
 
 
 class NodeNotFoundError(Exception):
