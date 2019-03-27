@@ -60,9 +60,8 @@ def cli(no_write, filename):
 
 
 @cli.command()
-@click.argument("filename", type=click.Path(exists=True))
 @click.argument("dependency", type=str)
-def add_install(filename, dependency):
+def add_install(dependency):
     """Add a dependency to install_requires.  This will add an entry to the
     install_requires list.  It will not abide by any formatting standards, it
     simply adds a new item at the end.
@@ -79,7 +78,7 @@ def add_install(filename, dependency):
 
     :param dependency: The dependency to add.
     """
-    setupfile, encoding = _common.load_file(filename)
+    setupfile, encoding = _common.load_file(config.filename)
     try:
         tree = _common.parse_string(setupfile, python_grammar)
     except ParseError as pe:
@@ -90,7 +89,7 @@ def add_install(filename, dependency):
         except _mutators.AlreadyExistsError as e:
             print("{}, not modifying".format(str(e)))
         else:
-            write_output(tree, filename, encoding)
+            write_output(tree, config.filename, encoding)
 
 
 @cli.command()
