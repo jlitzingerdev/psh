@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="psh",
-    version="0.1.0",
+    version="0.2.0",
     description="A project for manipulating setup.py",
     author="Jason Litzinger",
     author_email="jlitzingerdev@gmail.com",
