@@ -15,7 +15,7 @@ from lib2to3.pgen2.parse import ParseError
 import attr
 import click
 
-from psh import _common, _mutators
+from psh import _common, _mutators, _searching
 
 
 @attr.s
@@ -23,6 +23,7 @@ class Config:
     """Configuration for psh"""
 
     write = attr.ib(default=True, type=bool)
+    filename = attr.ib(default="", type=str)
 
 
 config = Config()
@@ -45,9 +46,17 @@ def write_output(tree, original, encoding) -> None:
     is_flag=True,
     help="Overwrite existing setup or print to stdout",
 )
-def cli(no_write):
+@click.option(
+    "--filename",
+    "-f",
+    default="setup.py",
+    type=click.Path(exists=True),
+    help="Filename to manipulate, defaults to setup.py",
+)
+def cli(no_write, filename):
     """Top level entrypoint"""
     config.write = not no_write
+    config.filename = filename
 
 
 @cli.command()
@@ -82,3 +91,22 @@ def add_install(filename, dependency):
             print("{}, not modifying".format(str(e)))
         else:
             write_output(tree, filename, encoding)
+
+
+@cli.command()
+@click.argument("version", required=False, type=str, default=None)
+def version(version):
+    """Get or modify the version"""
+    setupfile, encoding = _common.load_file(config.filename)
+    try:
+        tree = _common.parse_string(setupfile, python_grammar)
+    except ParseError as pe:
+        print(pe.context)
+    else:
+        version_node = _searching.get_version(tree)
+        current_version = _common.UNQUOTED_STRING.match(version_node.value).groups()[0]
+        print(current_version)
+
+        if version:
+            version_node.value = _common.quote_string(version)
+            write_output(tree, config.filename, encoding)

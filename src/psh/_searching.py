@@ -127,3 +127,12 @@ def find_install_requires(tree):
                 continue
 
     raise _common.NodeNotFoundError("no install_requires argument")
+
+
+def get_version(tree) -> Leaf:
+    """Get the version argument for setup()"""
+    setup_call = find_setup_args(tree)
+    for candidate in iterate_kinds_all(setup_call, (token.NAME,)):
+        if candidate.value == "version":
+            return candidate.parent.children[2]
+    raise _common.NodeNotFoundError("Can't find version")
