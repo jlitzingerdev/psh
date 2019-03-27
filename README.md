@@ -17,5 +17,23 @@ Also, because lib2to3 does not promise stability, this is not guaranteed to work
 # Tested on
 - Python 3.6.7
 
+# Installation
+Currently, I haven't packaged this for PYPI yet, though I plan to in the future.  I also have not checked for name conflicts
+
+pip3 install --user git+https://github.com/jlitzingerdev/psh.git#egg=psh
+
+# Examples
+## Querying version
+`psh version`
+
+## Modifying the version
+`psh version 0.2.0`
+
+Note that it does not expect a semver, that is only an example.
+
+## Add an install dependency
+
+`psh add-install attrs`
+
 # Credits
 I benefited greatly from examples of using lib2to3 to get an FST, but specifically I spent time in the source code of [black](https://github.com/ambv/black).
