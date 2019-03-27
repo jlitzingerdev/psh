@@ -103,11 +103,16 @@ def version(new_version):
     except ParseError as pe:
         print(pe.context)
     else:
-        version_node = _searching.get_version(tree)
-        current_version = _common.UNQUOTED_STRING.match(version_node.value).groups()[0]
-
-        if new_version:
-            version_node.value = _common.quote_string(new_version)
-            write_output(tree, config.filename, encoding)
+        try:
+            version_node = _searching.get_version(tree)
+        except _common.NodeNotFoundError:
+            print("There doesn't seem to be a version specification")
         else:
-            print(current_version)
+            current_version = _common.UNQUOTED_STRING.match(
+                version_node.value
+            ).groups()[0]
+            if new_version:
+                version_node.value = _common.quote_string(new_version)
+                write_output(tree, config.filename, encoding)
+            else:
+                print(current_version)
