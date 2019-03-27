@@ -105,13 +105,17 @@ def version(new_version):
         try:
             version_node = _searching.get_version(tree)
         except _common.NodeNotFoundError:
-            print("There doesn't seem to be a version specification")
+            if new_version:
+                version_node = _mutators.add_version(tree)
+            else:
+                current_version = "There doesn't seem to be a version specification"
         else:
             current_version = _common.UNQUOTED_STRING.match(
                 version_node.value
             ).groups()[0]
-            if new_version:
-                version_node.value = _common.quote_string(new_version)
-                write_output(tree, config.filename, encoding)
-            else:
-                print(current_version)
+
+        if new_version:
+            version_node.value = _common.quote_string(new_version)
+            write_output(tree, config.filename, encoding)
+        else:
+            print(current_version)

@@ -50,25 +50,14 @@ def append_to_install_requires(install_requires_node, dependency):
             append_entry_to_atom(child, dependency)
 
 
-def add_arg_install_requires(trailer):
-    """Create an install requires argument where none exists"""
-    install_requires = pytree.Node(
-        python_symbols.argument,
-        [
-            pytree.Leaf(1, _searching.ARG_INSTALL_REQUIRES),
-            pytree.Leaf(22, "="),
-            pytree.Node(
-                python_symbols.atom, [pytree.Leaf(9, "["), pytree.Leaf(10, "]")]
-            ),
-        ],
-    )
-
+def add_arg(trailer, argument) -> None:
+    """Add an argument to a call"""
     try:
         target = _searching.find_first_of_type(
             trailer, (python_symbols.argument, python_symbols.arglist)
         )
     except _searching.TypeNotFoundError:
-        trailer.insert_child(1, install_requires)
+        trailer.insert_child(1, argument)
     else:
         if target.type == python_symbols.argument:
             new = pytree.Node(python_symbols.arglist, [])
@@ -78,9 +67,7 @@ def add_arg_install_requires(trailer):
             target = new
 
         target.append_child(pytree.Leaf(token.COMMA, ","))
-        target.append_child(install_requires)
-
-    return install_requires
+        target.append_child(argument)
 
 
 def add_arg_to_install(tree, dependency: str):
@@ -95,7 +82,17 @@ def add_arg_to_install(tree, dependency: str):
         install_requires_node = _searching.find_install_requires(tree)
     except _common.NodeNotFoundError:
         setup_args = _searching.find_setup_args(tree)
-        install_requires_node = add_arg_install_requires(setup_args)
+        install_requires_node = pytree.Node(
+            python_symbols.argument,
+            [
+                pytree.Leaf(1, _searching.ARG_INSTALL_REQUIRES),
+                pytree.Leaf(22, "="),
+                pytree.Node(
+                    python_symbols.atom, [pytree.Leaf(9, "["), pytree.Leaf(10, "]")]
+                ),
+            ],
+        )
+        add_arg(setup_args, install_requires_node)
     else:
 
         for ch in _searching.iterate_kinds_all(install_requires_node, (token.STRING,)):
@@ -121,3 +118,18 @@ def add_arg_to_install(tree, dependency: str):
 
     dependency = _common.quote_string(dependency)
     append_to_install_requires(install_requires_node, dependency)
+
+
+def add_version(tree) -> pytree.Leaf:
+    """Add a version node"""
+    setup_args = _searching.find_setup_args(tree)
+    version_node = pytree.Node(
+        python_symbols.argument,
+        [
+            pytree.Leaf(token.NAME, "version"),
+            pytree.Leaf(22, "="),
+            pytree.Leaf(token.STRING, '""'),
+        ],
+    )
+    add_arg(setup_args, version_node)
+    return version_node.children[-1]
