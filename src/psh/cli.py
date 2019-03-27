@@ -94,8 +94,8 @@ def add_install(filename, dependency):
 
 
 @cli.command()
-@click.argument("version", required=False, type=str, default=None)
-def version(version):
+@click.argument("new_version", required=False, type=str, default=None)
+def version(new_version):
     """Get or modify the version"""
     setupfile, encoding = _common.load_file(config.filename)
     try:
@@ -105,8 +105,9 @@ def version(version):
     else:
         version_node = _searching.get_version(tree)
         current_version = _common.UNQUOTED_STRING.match(version_node.value).groups()[0]
-        print(current_version)
 
-        if version:
-            version_node.value = _common.quote_string(version)
+        if new_version:
+            version_node.value = _common.quote_string(new_version)
             write_output(tree, config.filename, encoding)
+        else:
+            print(current_version)
