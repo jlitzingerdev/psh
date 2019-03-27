@@ -119,5 +119,5 @@ def add_arg_to_install(tree, dependency: str):
                     "{} already exists as {}".format(dependency, existing)
                 )
 
-    dependency = '"{}"'.format(dependency)
+    dependency = _common.quote_string(dependency)
     append_to_install_requires(install_requires_node, dependency)
