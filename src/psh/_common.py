@@ -50,3 +50,8 @@ def dump_tree(tree):
     """Print the entire tree in pre-order"""
     for n in tree.pre_order():
         print(dump_node(n))
+
+
+def quote_string(value):
+    """Return a quoted version of value, e.g. 'foo' -> '"foo"' """
+    return '"{}"'.format(value)
